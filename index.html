@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>합주문 BO 와이어프레임 v7.8 — 개발 검토용 보강</title>
+<style>
+  :root{
+    --blue:#2563eb; --blue-soft:#dbeafe;
+    --red:#dc2626; --red-soft:#fee2e2;
+    --green:#059669; --orange:#f97316;
+    --amber:#d97706; --amber-soft:#fef3c7;
+    --purple:#7c3aed;
+    --ink:#1f2937; --gray-1:#f9fafb; --gray-2:#f3f4f6; --gray-3:#e5e7eb;
+    --gray-4:#d1d5db; --gray-5:#9ca3af; --gray-6:#6b7280; --gray-7:#4b5563;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;background:#f0f2f5;color:var(--ink);font-size:12px;line-height:1.5;padding:20px}
+  .wrap{max-width:1180px;margin:0 auto}
+
+  .intro{background:linear-gradient(135deg,#1e3a8a,#3730a3);color:#fff;padding:20px 24px;border-radius:8px;margin-bottom:18px}
+  .intro h1{font-size:20px;font-weight:700;margin-bottom:6px}
+  .intro h1 .tag{font-size:11px;background:rgba(255,255,255,.2);padding:3px 8px;border-radius:4px;font-weight:600;margin-left:8px;vertical-align:middle}
+  .intro p{font-size:13px;opacity:.95;margin-bottom:6px}
+  .intro .meta{display:flex;gap:16px;font-size:12px;margin-top:14px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.2);padding-top:14px}
+
+  .legend{background:#fff;border:1px solid var(--gray-3);border-radius:8px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:18px;font-size:12px;flex-wrap:wrap}
+  .legend .item{display:flex;align-items:center;gap:6px}
+  .legend .sw-new{width:26px;height:14px;outline:2px dashed var(--red);outline-offset:1px;border-radius:2px;background:#fff}
+
+  .b-fixed{background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;display:inline-block;vertical-align:middle}
+  .b-check{background:var(--amber-soft);color:var(--amber);border:1px solid #fcd34d;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;display:inline-block;vertical-align:middle}
+
+  .scope{background:#fff;border:2px solid var(--blue);border-radius:8px;padding:18px 22px;margin-bottom:22px}
+  .scope h2{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:6px}
+  .scope .sub{font-size:11px;color:var(--gray-6);margin-bottom:14px}
+  .scope table{width:100%;border-collapse:collapse;font-size:12px}
+  .scope th{background:#eff6ff;padding:9px 11px;text-align:left;color:var(--blue);font-weight:700;border-bottom:1px solid var(--blue-soft);font-size:11px}
+  .scope td{padding:9px 11px;border-bottom:1px solid var(--gray-2);vertical-align:top}
+  .scope td.area{font-weight:700;white-space:nowrap}
+  .scope .lv-order{background:var(--purple);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px}
+  .scope .lv-sg{background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px}
+  .scope code{background:var(--gray-2);border-radius:3px;padding:0 4px;font-size:10px;font-family:monospace}
+
+  .screen-section{margin-bottom:30px}
+  .screen-section .head{background:linear-gradient(135deg,#1e3a8a,#3730a3);color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center}
+  .screen-section .head .num{background:rgba(255,255,255,.2);padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px}
+  .screen-section .head h2{font-size:16px;font-weight:700;display:inline-block;margin-left:8px}
+  .screen-section .head .meta{font-size:12px;opacity:.85}
+  .screen-body{background:#fff;border:1px solid var(--gray-3);border-top:none;border-radius:0 0 8px 8px;padding:18px}
+  .single-side{border:1px solid var(--gray-3);border-radius:6px;background:#fff;overflow:hidden}
+
+  .hl{position:relative;outline:2px dashed var(--red);outline-offset:2px;border-radius:3px}
+  .hl::before{content:attr(data-label);position:absolute;top:-10px;left:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;z-index:10}
+
+  .note{font-size:10px;color:var(--gray-6);background:var(--gray-1);border-left:3px solid var(--gray-4);padding:5px 10px;margin:6px 14px}
+  .note-check{font-size:10px;color:#92400e;background:var(--amber-soft);border-left:3px solid var(--amber);padding:5px 10px;margin:6px 14px}
+
+  .change-explain{background:#fef2f2;border-left:3px solid var(--red);padding:12px 16px;margin-top:14px;font-size:12px}
+  .change-explain h4{color:#991b1b;font-weight:700;font-size:13px;margin-bottom:6px}
+  .change-explain ul{margin:6px 0 0 18px;color:#7f1d1d}
+  .change-explain li{margin:3px 0}
+  .change-explain b{color:#7f1d1d}
+  .change-explain code{background:#fde2e2;border-radius:3px;padding:0 4px;font-size:10px;font-family:monospace}
+  .keep-explain{background:#f0fdf4;border-left:3px solid var(--green);padding:12px 16px;margin-top:10px;font-size:12px}
+  .keep-explain h4{color:#166534;font-weight:700;font-size:13px;margin-bottom:6px}
+  .keep-explain p{color:#166534}
+
+  .admin-screen{background:#fff;font-size:12px}
+  .detail-header{padding:12px 18px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--gray-2)}
+  .detail-header .left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .btn-back{border:1px solid var(--gray-3);background:#fff;padding:4px 10px;border-radius:3px;font-size:11px}
+  .pill-order{background:var(--blue);color:#fff;padding:4px 10px;border-radius:3px;font-size:11px;font-weight:600}
+  .combo-badge{background:var(--purple);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:2px}
+
+  .btn{border:1px solid var(--gray-3);background:#fff;color:var(--ink);padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;font-weight:500}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.red{background:var(--red);color:#fff;border-color:var(--red)}
+  .btn.ghost{background:#fff;color:var(--gray-5);border-color:var(--gray-3)}
+  .btn.small{padding:3px 8px;font-size:10px}
+
+  /* 주문 레벨 액션 바 (상단, 유지) */
+  .order-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 18px;background:#fafbfc;border-bottom:1px solid var(--gray-2)}
+  .order-actions .label{font-size:10px;font-weight:700;color:var(--gray-6);margin-right:4px}
+
+  .sg-chip{padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;border:1px solid;display:inline-block}
+  .sg-chip.korea{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+  .sg-chip.normal{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+  .sg-chip.domestic{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+
+  .detail-grid{display:grid;grid-template-columns:1fr 250px;gap:12px;padding:12px 18px}
+
+  /* SG 카드 (배송처리 보조) */
+  .sg-card{border:1px solid var(--gray-3);border-radius:6px;margin-bottom:12px;overflow:hidden;background:#fff}
+  .sg-card.korea{border-left:3px solid #60a5fa}
+  .sg-card.normal{border-left:3px solid #34d399}
+  .sg-card-head{padding:9px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-2);font-size:11px;flex-wrap:wrap;gap:6px;background:#fafbfc}
+  .sg-head-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .sg-head-left .title{font-size:11px;font-weight:700}
+  .sg-head-left .ftype{font-size:9px;color:var(--gray-6);font-family:monospace}
+  .sg-head-meta{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--gray-7);flex-wrap:wrap}
+  .sg-head-meta .k{color:var(--gray-5)}
+
+  table.dt{width:100%;border-collapse:collapse;font-size:11px}
+  table.dt th{background:#fafbfc;padding:7px 10px;text-align:left;color:var(--gray-7);font-weight:600;font-size:10px;border-bottom:1px solid var(--gray-3)}
+  table.dt td{padding:10px;border-bottom:1px solid var(--gray-2);vertical-align:top;font-size:11px}
+  .prod-cell{display:flex;gap:8px}
+  .prod-cell .thumb{width:38px;height:48px;background:var(--gray-2);border-radius:3px;flex-shrink:0}
+  .prod-cell .ordno{font-weight:700;font-size:11px}
+  .prod-cell .name{font-size:10px;color:var(--ink);margin:2px 0}
+  .prod-cell .jp{font-size:10px;color:var(--blue);text-decoration:underline;display:block}
+  .state-cell .opt{font-weight:700;font-size:10px}
+  .state-cell .code{font-size:9px;color:var(--gray-6);margin-bottom:4px}
+  .bsm{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;display:inline-block;border:1px solid}
+  .bsm.delivered{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .bsm.shipping{background:var(--green);color:#fff;border-color:var(--green)}
+  .bsm.ready{background:var(--gray-2);color:var(--gray-7);border-color:var(--gray-3)}
+  .price-cell{text-align:right;font-size:11px}
+  .final{font-weight:700}
+  .col-prod{}.col-state{width:130px}.col-shop{width:64px}.col-price{width:78px;text-align:right}.col-disc{width:78px;text-align:right}
+
+  /* SG 카드 액션 (배송 기능만) */
+  .sg-actions{padding:8px 12px;border-top:1px solid var(--gray-2);background:#fff;display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .sg-actions .label{font-size:9px;color:var(--gray-5);margin-right:2px}
+
+  /* 결제정보 (주문 기준, 풀 유지) */
+  .pay{border:1px solid var(--gray-3);font-size:11px;background:#fff;margin:12px 18px 0;width:calc(100% - 36px);border-collapse:collapse}
+  .pay td{padding:7px 12px;font-size:11px;border-bottom:1px solid var(--gray-2)}
+  .pay td.k{color:var(--gray-7)}
+  .pay td.amount{text-align:right;font-weight:600}
+  .pay td.amount.red{color:var(--red)}
+  .pay tr.sub td{padding-left:24px;color:var(--gray-6);font-size:10px}
+  .pay tr.tot td{border-top:2px solid var(--gray-3);background:#eff6ff;font-weight:700}
+  .pay tr.tot td.amount{color:var(--blue);font-size:13px}
+  .pay tr.coupon td{font-size:10px;color:var(--gray-5)}
+
+  /* 합주문 참고정보 (SG 금액 간단) */
+  .ref-box{margin:12px 18px 0;border:1px dashed var(--gray-4);border-radius:6px;background:var(--gray-1);padding:10px 14px}
+  .ref-box .title{font-size:10px;font-weight:700;color:var(--gray-6);margin-bottom:6px}
+  .ref-box .row{display:flex;gap:18px;flex-wrap:wrap;font-size:11px}
+  .ref-box .row .item{display:flex;gap:6px}
+  .ref-box .row .item .k{color:var(--gray-6)}
+  .ref-box .row .item .v{font-weight:600}
+
+  .side-card{background:#fff;border:1px solid var(--gray-3);border-radius:3px;margin-bottom:8px}
+  .side-card .head{padding:8px 10px;font-size:11px;font-weight:700;border-bottom:1px solid var(--gray-2)}
+  .side-card .body{padding:8px 10px;font-size:10px}
+  .side-card .row{display:flex;justify-content:space-between;padding:2px 0}
+  .side-card .row .l{color:var(--gray-6)}
+
+  .claim-history{border:1px solid var(--gray-3);border-radius:6px;margin:14px 18px 0}
+  .claim-history .h{padding:10px 14px;font-weight:700;font-size:12px;border-bottom:1px solid var(--gray-2);background:#fafbfc}
+  table.ct{width:100%;border-collapse:collapse;font-size:10px}
+  table.ct th{background:#fff;padding:7px 10px;text-align:left;color:var(--gray-6);font-weight:600;font-size:9px;border-bottom:1px solid var(--gray-2)}
+  table.ct td{padding:8px 10px;border-bottom:1px solid var(--gray-2);font-size:10px}
+  .btn-detail{background:#1f2937;color:#fff;border:none;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer}
+
+  .modal-frame{background:rgba(15,23,42,.25);padding:20px;border-radius:6px}
+  .modal-box{background:#fff;border-radius:4px;margin:0 auto;max-width:540px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden}
+  .modal-head{padding:10px 14px;border-bottom:1px solid var(--gray-2);display:flex;justify-content:space-between;align-items:center}
+  .modal-head h3{font-size:13px;font-weight:700}
+  .modal-body{padding:14px 16px}
+  .modal-foot{padding:10px 14px;border-top:1px solid var(--gray-2);background:var(--gray-1);display:flex;justify-content:flex-end;gap:6px}
+  .step-label{font-size:10px;font-weight:700;color:var(--gray-6);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .step-num{background:var(--blue);color:#fff;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px}
+  .sg-tab-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .sg-tab{border:1px solid var(--gray-3);border-radius:4px;padding:6px 12px;font-size:10px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:6px}
+  .sg-tab.on{border-color:var(--blue);background:#eff6ff;color:var(--blue);font-weight:700}
+  .modal-prod{border:1px solid var(--gray-3);border-radius:4px;overflow:hidden;margin-bottom:12px}
+  .mp-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--gray-2);font-size:10px}
+  .mp-row:last-child{border-bottom:none}
+  .mp-row .thumb{width:30px;height:30px;background:var(--gray-3);border-radius:2px}
+  .mp-row .info{flex:1}.mp-row .nm{font-weight:600}.mp-row .sub{color:var(--gray-6);font-size:9px}
+  .qty{border:1px solid var(--gray-3);border-radius:2px;padding:2px 5px;width:42px;font-size:10px;text-align:center}
+  .reason-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;font-size:10px;margin-bottom:12px}
+  .reason-grid label{display:flex;align-items:center;gap:3px}
+  .final-refund{background:#eff6ff;border:1px solid var(--blue-soft);border-radius:4px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+  .final-refund .v{font-weight:700;font-size:15px;color:var(--blue)}
+
+  .openissue{background:#fff;border:2px solid var(--amber);border-radius:8px;padding:18px 22px;margin-bottom:24px}
+  .openissue h2{font-size:15px;font-weight:700;color:var(--amber);margin-bottom:4px}
+  .openissue .sub{font-size:11px;color:var(--gray-6);margin-bottom:14px}
+  .openissue table{width:100%;border-collapse:collapse;font-size:11px}
+  .openissue th{background:var(--amber-soft);padding:9px 11px;text-align:left;color:#92400e;font-weight:700;border-bottom:1px solid #fcd34d;font-size:10px}
+  .openissue td{padding:9px 11px;border-bottom:1px solid var(--gray-2);font-size:11px;vertical-align:top}
+  .openissue td.id{font-weight:700;color:var(--amber);white-space:nowrap}
+  .openissue code{background:var(--gray-2);border-radius:3px;padding:0 4px;font-size:10px;font-family:monospace}
+  .owner{font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px}
+  .owner.cx{background:#dbeafe;color:#1e40af}
+  .owner.logi{background:#d1fae5;color:#065f46}
+  .owner.dev{background:#ede9fe;color:#5b21b6}
+  .owner.plan{background:#fef3c7;color:#92400e}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="intro">
+  <h1>합주문 BO 와이어프레임 v7.8 <span class="tag">개발 검토용 보강</span></h1>
+  <p>개발 리뷰용 BO 화면입니다. <b>주문(Order)이 주체</b>, <b>SG는 배송처리를 위한 그룹</b>으로 역할을 분리했습니다.</p>
+  <p>클레임·결제정보는 주문 기준으로 유지하고, SG 카드는 배송 관련 기능만 제공합니다.</p>
+  <div class="meta">
+    <div>📅 <b>작성일</b> 2026-06-02</div>
+    <div>📋 <b>범위</b> 주문상세 + 클레임/송장 팝업</div>
+    <div>🎯 <b>관점</b> 주문 중심 + SG 배송처리 보조</div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="item"><span class="b-fixed">확정</span> 확정 스펙</div>
+  <div class="item"><span class="b-check">확인 필요</span> 미확정</div>
+  <div class="item"><span class="sw-new"></span> 합주문 신규(SG)</div>
+</div>
+
+<!-- 레벨 구분 -->
+<div class="scope">
+  <h2>📌 주문 레벨 vs SG 레벨 — 역할 분리</h2>
+  <div class="sub">클레임·결제는 주문(Order) 기준, 배송은 SG 기준. SG에는 배송처리 기능만 둡니다.</div>
+  <table>
+    <thead><tr><th style="width:26%">기능</th><th style="width:16%">레벨</th><th style="width:58%">위치 / 비고</th></tr></thead>
+    <tbody>
+      <tr><td class="area">교환 / 주문취소 / 반품</td><td><span class="lv-order">주문</span></td><td>주문상세 상단 액션 바. 클릭 → SG 선택 → 품목 선택 → 처리</td></tr>
+      <tr><td class="area">결제정보 (금액/쿠폰/배송비/포인트)</td><td><span class="lv-order">주문</span></td><td>주문 기준 결제 요약. 기존 항목 전부 유지</td></tr>
+      <tr><td class="area">클레임 이력</td><td><span class="lv-order">주문</span></td><td>취소/교환/반품 상세 표. 주문 기준 유지</td></tr>
+      <tr><td class="area">송장입력 / 송장동기화 / 배송시작</td><td><span class="lv-sg">SG</span></td><td>SG 카드 하단. 배송 기능만</td></tr>
+      <tr><td class="area">SG 코드/배송유형/배송사/송장/상품목록</td><td><span class="lv-sg">SG</span></td><td>SG 카드 헤더·본문. 배송그룹 표현용</td></tr>
+      <tr><td class="area">SG 금액</td><td><span class="lv-sg">SG</span></td><td>하단 [합주문 참고정보]에 상품금액만 간단히. 정산 박스·계산식 제거</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<div class="screen-section">
+  <div class="head">
+    <div><span class="num">주문상세</span><h2>주문 중심 — SG는 배송처리 보조</h2></div>
+    <span class="meta">클레임/결제는 주문, 배송은 SG</span>
+  </div>
+
+  <div class="screen-body">
+    <div class="single-side">
+      <div class="admin-screen">
+        <div class="detail-header">
+          <div class="left">
+            <button class="btn-back">목록</button>
+            <span class="pill-order">📋 260527-B7594CEB4</span>
+            <span class="hl" data-label="신규" style="display:inline-block"><span class="combo-badge">합주문</span></span>
+          </div>
+          <div style="font-size:10px;color:var(--gray-6);text-align:right">주문일시: 2026.05.27 11:35</div>
+        </div>
+
+        <!-- 주문 레벨 액션 (상단 유지) -->
+        <div class="order-actions">
+          <span class="label">주문 처리</span>
+          <button class="btn primary small">교환</button>
+          <button class="btn primary small">주문취소</button>
+          <button class="btn red small">반품</button>
+          <span style="font-size:9px;color:var(--gray-5);margin-left:6px">클릭 → SG 선택 → 품목 선택 → 처리</span>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <!-- SG 카드 (배송처리 보조) -->
+            <div class="hl" data-label="신규: 배송그룹(SG) — 배송처리용">
+
+              <div class="sg-card korea">
+                <div class="sg-card-head">
+                  <div class="sg-head-left">
+                    <span class="sg-chip korea">즉일발송(한국)</span>
+                    <span class="title">SG-001</span>
+                    <span class="ftype">fulfillment_type: KR_SAMEDAY</span>
+                  </div>
+                  <div class="sg-head-meta">
+                    <span><span class="k">배송상태</span> <span class="b-check">상태 산출방식 확인 필요</span></span>
+                    <span><span class="k">배송사</span> SHIPNERGY</span>
+                    <span><span class="k">송장</span> 123213</span>
+                    <span><span class="k">배송비</span> <span class="b-check">확인 필요</span></span>
+                  </div>
+                </div>
+                <table class="dt">
+                  <thead><tr><th class="col-prod">상품정보</th><th class="col-state">상품상태</th><th class="col-shop">샵명</th><th class="col-price">가격·수량</th><th class="col-disc">할인내역</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td><div class="prod-cell"><div class="thumb"></div><div><div class="ordno">260527-B7594CEB4-0</div><div class="name">Daily denim pants-TGMQQC7655</div><span class="jp">デイリー デニムパンツ</span></div></div></td>
+                      <td class="col-state"><div class="state-cell"><div class="opt">vintage blue / l</div><div class="code">TGMQQC7655000W</div><span class="bsm delivered">배송완료</span></div></td>
+                      <td class="col-shop">bokplace</td>
+                      <td class="col-price"><div class="price-cell">¥3,860 × 2<br><span class="final">¥7,720</span></div></td>
+                      <td class="col-disc"><div class="price-cell"><span class="final">¥7,720</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="prod-cell"><div class="thumb"></div><div><div class="ordno">260527-B7594CEB4-1</div><div class="name">Card wallet-LWT2231</div><span class="jp">カードウォレット</span></div></div></td>
+                      <td class="col-state"><div class="state-cell"><div class="opt">brown / free</div><div class="code">LWT2231000A</div><span class="bsm delivered">배송완료</span></div></td>
+                      <td class="col-shop">hoop</td>
+                      <td class="col-price"><div class="price-cell">¥3,040 × 1<br><span class="final">¥3,040</span></div></td>
+                      <td class="col-disc"><div class="price-cell"><span class="final">¥3,040</span></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="sg-actions hl" data-label="변경: SG는 배송 기능만">
+                  <span class="label">배송</span>
+                  <button class="btn red small">송장입력</button>
+                  <button class="btn small">송장 동기화</button>
+                  <button class="btn small">배송시작 (상태변경)</button>
+                </div>
+              </div>
+
+              <div class="sg-card normal">
+                <div class="sg-card-head">
+                  <div class="sg-head-left">
+                    <span class="sg-chip normal">일반배송</span>
+                    <span class="title">SG-002</span>
+                    <span class="ftype">fulfillment_type: NORMAL</span>
+                  </div>
+                  <div class="sg-head-meta">
+                    <span><span class="k">배송상태</span> <span class="b-check">상태 산출방식 확인 필요</span></span>
+                    <span><span class="k">배송사</span> 佐川急便</span>
+                    <span><span class="k">송장</span> 888888</span>
+                    <span><span class="k">배송비</span> <span class="b-check">확인 필요</span></span>
+                  </div>
+                </div>
+                <table class="dt">
+                  <thead><tr><th class="col-prod">상품정보</th><th class="col-state">상품상태</th><th class="col-shop">샵명</th><th class="col-price">가격·수량</th><th class="col-disc">할인내역</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td><div class="prod-cell"><div class="thumb"></div><div><div class="ordno">260527-B7594CEB4-2</div><div class="name">Loose denim (purple)-JMFWBZ8793</div><span class="jp">ルーズデニム</span></div></div></td>
+                      <td class="col-state"><div class="state-cell"><div class="opt">purple / s</div><div class="code">JMFWBZ8793000A</div><span class="bsm shipping">배송중</span></div></td>
+                      <td class="col-shop">hoop</td>
+                      <td class="col-price"><div class="price-cell">¥4,000 × 1<br><span class="final">¥4,000</span></div></td>
+                      <td class="col-disc"><div class="price-cell"><span class="final">¥4,000</span></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="sg-actions">
+                  <span class="label">배송</span>
+                  <button class="btn red small">송장입력</button>
+                  <button class="btn small">송장 동기화</button>
+                  <button class="btn small">배송시작 (상태변경)</button>
+                </div>
+              </div>
+            </div>
+            <div class="note-check">※ 일반배송은 동일 SG 안에서 송장이 여러 개 가능(정책). 현재는 대표 송장 1건만 표시 — 다중 송장 표시 방식 확인 필요(O3).</div>
+
+            <!-- 결제정보 (주문 기준, 풀 유지) -->
+            <table class="pay">
+              <tbody>
+                <tr><td class="k">상품구입금액 합계</td><td class="amount red">¥14,760</td></tr>
+                <tr><td class="k">쿠폰 할인액</td><td class="amount">- ¥600</td></tr>
+                <tr class="coupon"><td>└ 사용 쿠폰</td><td style="text-align:right">[true WEEK] 베스트500 (500엔)</td></tr>
+                <tr class="coupon"><td>└ 쿠폰 코드</td><td style="text-align:right">dd09099c264414aaca63f0d847ca1e7</td></tr>
+                <tr><td class="k">배송비 합계</td><td class="amount">¥550</td></tr>
+                <tr class="sub"><td>배송비</td><td class="amount">¥550</td></tr>
+                <tr><td class="k">신용카드 결제수수료 합계</td><td class="amount">¥0</td></tr>
+                <tr class="tot"><td>합계 금액</td><td class="amount">¥14,710</td></tr>
+                <tr class="tot"><td>결제 금액</td><td class="amount">¥14,710</td></tr>
+                <tr><td class="k">포인트 적립</td><td class="amount">+ 147</td></tr>
+              </tbody>
+            </table>
+
+            <!-- 합주문 참고정보 (SG 금액 간단) -->
+            <div class="ref-box hl" data-label="신규: 참고 수준만">
+              <div class="title">합주문 참고정보 (SG별 상품금액)</div>
+              <div class="row">
+                <div class="item"><span class="k">SG-001 상품금액</span><span class="v">¥10,760</span></div>
+                <div class="item"><span class="k">SG-002 상품금액</span><span class="v">¥4,000</span></div>
+              </div>
+            </div>
+            <div class="note">※ SG 금액은 참고 수준만 노출. 상세 계산식·SG별 결제금액 분해는 표시하지 않음. 노출 범위는 확인 필요(O4).</div>
+
+            <!-- 클레임 이력 (주문 기준 유지) -->
+            <div class="claim-history">
+              <div class="h">취소 / 교환 / 반품 상세 (주문 기준)</div>
+              <table class="ct">
+                <thead><tr><th>코드</th><th>종류</th><th>사유</th><th>처리</th><th>상태</th><th>작업자</th></tr></thead>
+                <tbody>
+                  <tr><td>260527-B7594CEB4-CANCEL-1</td><td>주문취소</td><td>배송지연</td><td><button class="btn-detail">상세 ></button></td><td>환불완료 ¥7,000</td><td>OhSeungMin</td></tr>
+                  <tr><td>260527-B7594CEB4-EXCHANGE-2</td><td>교환</td><td>오배송</td><td><button class="btn-detail">상세 ></button></td><td>교환 완료</td><td>OhSeungMin</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="side-card"><div class="head">회원 정보</div><div class="body">
+              <div class="row"><span class="l">이름</span><span style="color:var(--blue)">오 승민</span></div>
+              <div class="row"><span class="l">회원등급</span><span>NEW</span></div>
+              <div class="row"><span class="l">회원상태</span><span>정상(차단해제)</span></div>
+              <div class="row"><span class="l">주문 횟수</span><span>총 8회</span></div>
+            </div></div>
+            <div class="side-card"><div class="head">주문자 정보</div><div class="body">
+              <div class="row"><span class="l">이름</span><span>Oh SeungMin</span></div>
+              <div class="row"><span class="l">이메일</span><span>steven.oh@nugu.jp</span></div>
+              <div class="row"><span class="l">전화번호</span><span>+821048172814</span></div>
+            </div></div>
+            <div class="side-card"><div class="head">배송지</div><div class="body">
+              <div>京都府 福知山市 6200000</div>
+              <div class="row" style="margin-top:4px"><span class="l">수취인</span><span>Oh SeungMin</span></div>
+              <div class="row"><span class="l">배송메시지</span><span>없음</span></div>
+            </div></div>
+            <div class="side-card"><div class="head">결제 정보</div><div class="body">
+              <div class="row"><span class="l">결제일시</span><span>2026.05.27</span></div>
+              <div class="row"><span class="l">결제업체</span><span>gmo</span></div>
+              <div class="row"><span class="l">결제상태</span><span>결제완료</span></div>
+              <div class="row"><span class="l">결제수단</span><span>페이페이</span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="change-explain">
+      <h4>🔴 이번 변경 (주문 중심 재구성)</h4>
+      <ul>
+        <li><b>주문 레벨 액션 상단 유지</b>: 교환·주문취소·반품을 주문상세 상단에 둠. SG 카드에서는 제거.</li>
+        <li><b>SG 카드는 배송 기능만</b>: 송장입력·송장동기화·배송시작(상태변경)만. 교환/취소/반품 버튼 제거.</li>
+        <li><b>SG 정산 박스 제거</b>: SG별 상품금액/쿠폰할인/배송비/결제금액 박스 삭제. 대신 하단 [합주문 참고정보]에 SG 상품금액만 간단히.</li>
+        <li><b>SG 상태 배지</b> <span class="b-check">확인 필요</span>: <code>shipping_status</code> 컬럼 존재 불명확 → "상태 산출방식 확인 필요" 표기(O1).</li>
+      </ul>
+    </div>
+    <div class="keep-explain">
+      <h4>🟢 기존 그대로 유지</h4>
+      <p>결제정보(상품구입금액 합계·쿠폰 할인액·사용 쿠폰명·쿠폰 코드·배송비 합계·배송비·신용카드 결제수수료·합계금액·결제금액·포인트 적립), 클레임 이력, 우측 사이드, 상품정보 영역은 기존 어드민과 동일하게 주문 기준으로 유지합니다.</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen-section">
+  <div class="head">
+    <div><span class="num">클레임 / 송장 팝업</span><h2>주문 상단 진입 → SG 선택 → 품목 선택</h2></div>
+    <span class="meta">선택 SG 상품만 노출</span>
+  </div>
+
+  <div class="screen-body">
+    <div class="single-side" style="border:none">
+      <div class="modal-frame">
+        <div class="modal-box">
+          <div class="modal-head"><h3>반품 처리 (주문 260527-B7594CEB4)</h3><span style="color:var(--gray-5);cursor:pointer">×</span></div>
+          <div class="modal-body">
+
+            <div class="step-label"><span class="step-num">1</span> 처리할 SG 선택</div>
+            <div class="hl" data-label="신규: SG 선택" style="margin-bottom:12px">
+              <div class="sg-tab-row" style="padding:6px">
+                <div class="sg-tab on"><span class="sg-chip korea">즉일(한국)</span> SG-001</div>
+                <div class="sg-tab"><span class="sg-chip normal">일반</span> SG-002</div>
+              </div>
+            </div>
+
+            <div class="step-label"><span class="step-num">2</span> 상품 / 수량 선택 <span style="font-weight:400;color:var(--gray-5)">(SG-001 소속 상품만 표시)</span></div>
+            <div class="modal-prod">
+              <div class="mp-row">
+                <input type="checkbox" checked>
+                <div class="thumb"></div>
+                <div class="info"><div class="nm">260527-B7594CEB4-0 Daily denim pants</div><div class="sub">vintage blue / l · ¥3,860</div></div>
+                <span style="color:var(--gray-6)">수량</span><input class="qty" value="1"> <span style="color:var(--gray-6)">/2</span>
+              </div>
+              <div class="mp-row">
+                <input type="checkbox">
+                <div class="thumb"></div>
+                <div class="info"><div class="nm">260527-B7594CEB4-1 Card wallet</div><div class="sub">brown / free · ¥3,040</div></div>
+                <span style="color:var(--gray-6)">수량</span><input class="qty" value="0"> <span style="color:var(--gray-6)">/1</span>
+              </div>
+            </div>
+
+            <div class="step-label"><span class="step-num">3</span> 요청 사유</div>
+            <div class="reason-grid">
+              <label><input type="radio"> 단순변심</label>
+              <label><input type="radio" checked> 오배송</label>
+              <label><input type="radio"> 상품불량</label>
+              <label><input type="radio"> 배송지연</label>
+              <label><input type="radio"> 상품파손</label>
+              <label><input type="radio"> 상품정보상이</label>
+            </div>
+
+            <div class="final-refund">
+              <span style="font-weight:700">총 환불금액 <span class="b-check">산출 로직 확인 필요</span></span>
+              <span class="v">¥3,600</span>
+            </div>
+
+          </div>
+          <div class="modal-foot">
+            <button class="btn small">철회</button>
+            <button class="btn primary small">저장</button>
+            <button class="btn small">확정</button>
+            <button class="btn ghost small">닫기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="change-explain">
+      <h4>🔴 클레임 처리 흐름</h4>
+      <ul>
+        <li><b>주문 상단 버튼에서 진입</b>: 교환/취소/반품은 주문 상단에서 시작. SG 카드에는 클레임 버튼 없음.</li>
+        <li><b>SG 선택 → 품목 선택</b>: STEP 1에서 SG 고르면 STEP 2에 <b>그 SG 소속 상품만</b> 노출(예: SG-001 선택 시 SG-001 품목만).</li>
+        <li><b>총 환불금액</b> <span class="b-check">확인 필요</span>: 최종 금액만 표시. 안분/계산 상세는 미노출.</li>
+      </ul>
+    </div>
+    <div class="keep-explain">
+      <h4>🟢 기존 팝업 구조 유지</h4>
+      <p>상품/수량 선택, 요청 사유, 하단 버튼(철회/저장/확정/닫기)은 기존 구조 그대로입니다. SG 선택 단계만 앞에 추가됩니다.</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="openissue">
+  <h2>⚠️ Open Issue — 개발 확인 항목</h2>
+  <div class="sub">화면의 <span class="b-check">확인 필요</span> 표시와 연결되는 항목입니다.</div>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:26%">항목</th><th style="width:12%">주체</th><th style="width:56%">내용</th></tr></thead>
+    <tbody>
+      <tr><td class="id">O1</td><td>SG 상태 표현 방식</td><td><span class="owner dev">개발</span></td><td>SG 상태 컬럼 존재 여부 확인 필요. 별도 컬럼이 없다면 품목 상태 집계인지 / Shipping 기준 계산인지 확인 필요.</td></tr>
+      <tr><td class="id">O2</td><td>Order 조회 API 응답</td><td><span class="owner dev">개발</span></td><td><code>OrderShippingGroup</code> 응답 스펙 확인 필요 — 배송사 / 송장정보 / SG 금액정보 포함 여부.</td></tr>
+      <tr><td class="id">O3</td><td>일반배송 다중 송장</td><td><span class="owner logi">물류</span> <span class="owner dev">개발</span></td><td>대표 송장만 표시할지 / 전체 송장 펼침 제공할지 확인 필요.</td></tr>
+      <tr><td class="id">O4</td><td>SG 금액 노출 범위</td><td><span class="owner dev">개발</span> <span class="owner plan">기획</span></td><td>상품금액 / 할인금액 / 배송비 / 결제금액 중 운영 화면에 어디까지 노출할지 확인 필요. 현재는 참고용 상품금액만.</td></tr>
+      <tr><td class="id">O5</td><td>SG 배송비 노출 정책</td><td><span class="owner dev">개발</span> <span class="owner cx">CX</span></td><td>SG별 배송비 계산 결과를 주문상세에 노출할지 / 배송비 0엔(무료배송) SG도 노출할지 / CX가 SG 단위 배송비를 확인해야 하는지. 예) SG-001 배송비 550엔, SG-002 무료배송.</td></tr>
+      <tr><td class="id">O6</td><td>SG 송장 구조</td><td><span class="owner dev">개발</span> <span class="owner logi">물류</span></td><td>SG : 송장 = 1:1 인가 / 1:N 인가. 일반배송 다중 송장 지원 여부 확인.</td></tr>
+      <tr><td class="id">O7</td><td>SG 상태 계산 방식</td><td><span class="owner dev">개발</span></td><td>현재 화면에 배송중/배송완료 상태 존재. SG 상태 컬럼 존재 여부 / 상품 상태 집계 여부 / 배송 상태 기반 계산 여부 확인 필요.</td></tr>
+      <tr><td class="id">O8</td><td>OrderShippingGroup API 응답</td><td><span class="owner dev">개발</span></td><td>주문조회 API에서 SG 단위로 내려오는 데이터 확인 필요. 예상 항목: <code>sg_id</code> / <code>fulfillment_type</code> / <code>shipping_company</code> / <code>invoice_number</code> / <code>shipping_fee</code> / <code>product_amount</code> / <code>coupon_discount</code> / <code>payment_amount</code> / <code>shipping_status</code>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="openissue" style="border-color:var(--blue)">
+  <h2 style="color:var(--blue)">🛠 개발 확인 요청</h2>
+  <div class="sub">정책·UI보다 우선해서 개발자에게 확인받을 항목입니다. 이 답이 정해져야 화면 스펙이 확정됩니다.</div>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:34%">요청</th><th style="width:60%">상세</th></tr></thead>
+    <tbody>
+      <tr><td class="id">1</td><td>OrderShippingGroup 응답 JSON 예시 요청</td><td>주문조회 API에서 SG 단위로 실제 내려오는 JSON 구조 예시 공유. (sg_id / fulfillment_type / shipping_company / invoice_number / shipping_fee / product_amount / coupon_discount / payment_amount / shipping_status 포함 여부)</td></tr>
+      <tr><td class="id">2</td><td>SG 상태 계산 기준 확인</td><td>SG 배송상태(배송중/배송완료)를 별도 컬럼으로 갖는지, 품목 상태 집계인지, 배송 상태 기반 계산인지.</td></tr>
+      <tr><td class="id">3</td><td>SG 배송비 계산 결과 제공 여부 확인</td><td>SG별 배송비(550엔/무료배송)를 API가 계산해 내려주는지, FE 계산인지. 운영 화면 노출 여부 포함.</td></tr>
+      <tr><td class="id">4</td><td>일반배송 다중 송장 지원 여부 확인</td><td>SG : 송장 = 1:1 인지 1:N 인지. 1:N이면 응답 구조와 대표 송장 지정 방식.</td></tr>
+      <tr><td class="id">5</td><td>SG별 금액 정보 제공 범위 확인</td><td>product_amount / coupon_discount / payment_amount 중 SG 단위로 제공되는 범위. 주문 합계와의 검증 방식.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
